@@ -20,11 +20,12 @@
     <meta name="theme-color" content="#d1453b" />
     <meta name="color-scheme" content="light dark" />
     <!--
-      The theme and accent, before the first paint. A file rather than an
-      inline script so the Content-Security-Policy in .htaccess can refuse
-      every inline script, with no hash to keep in step with this one. Not a
-      module and not deferred, on purpose: it has to run before the body is
-      drawn.
+      The theme and accent, before the first paint, and the guard against
+      being framed. A file rather than an inline script so the
+      Content-Security-Policy (security-headers.ts; the build writes it in
+      above this line) can refuse every inline script, with no hash to keep
+      in step with this one. Not a module and not deferred, on purpose: it
+      has to run before the body is drawn.
     -->
     <script src="./theme-boot.js"></script>
     <meta name="description" content="Enhanced for Todoist is an independent project. It is not created by, affiliated with, or supported by Todoist. An alternative, local-first client built around planning a week." />

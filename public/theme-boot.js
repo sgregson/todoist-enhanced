@@ -1,4 +1,21 @@
 /*
+  Never inside another site's frame.
+
+  A page that frames this one can lay its own buttons over it and have a
+  click land on Delete. The Content-Security-Policy's frame-ancestors 'none'
+  refuses the frame, but only where the host sends it as a header (Apache,
+  Vercel, Netlify): the <meta> copy of the policy cannot carry it, so on
+  GitHub Pages this is the guard. A framed copy is hidden before the body is
+  drawn, leaving nothing to click, and asks to take the whole window.
+*/
+if (window.top !== window.self) {
+  document.documentElement.style.setProperty('display', 'none', 'important');
+  try {
+    window.top.location.replace(window.self.location.href);
+  } catch { /* A sandboxed or cross-origin frame cannot be left; it stays hidden. */ }
+}
+
+/*
   The theme, before the first paint.
 
   Preferences live in IndexedDB and arrive a moment after the page does.

@@ -2,34 +2,27 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
+import { headersFile, SECURITY_HEADERS, withSecurityMeta } from './security-headers';
 
 /**
- * The security headers the host sends, from public/.htaccess.
+ * The security policy, carried by the build itself (see security-headers.ts).
  *
- * Apache applies them in production. `npm run preview` applies the same ones
- * here so a build can be checked against the policy before it is uploaded.
- * Keep the two in step.
+ * A host that cannot send headers — GitHub Pages — still gets the policy as a
+ * <meta> tag at the top of index.html, and Netlify or Cloudflare Pages get a
+ * `_headers` file. Build only: the dev server's React refresh needs an inline
+ * script the policy refuses. `npm run preview` sends the full headers too, so
+ * a build can be checked against the policy before it is uploaded.
  */
-const SECURITY_HEADERS = {
-  'Content-Security-Policy': [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
-    "connect-src 'self' https://api.todoist.com",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self'",
-    "manifest-src 'self'",
-    "worker-src 'self'",
-    "base-uri 'self'",
-    "frame-src https://tally.so",
-    "form-action 'self'",
-    "frame-ancestors 'none'",
-    "object-src 'none'",
-  ].join('; '),
-  'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
-};
+function securityPolicy(): Plugin {
+  return {
+    name: 'security-policy',
+    apply: 'build',
+    transformIndexHtml: { order: 'post', handler: withSecurityMeta },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: '_headers', source: headersFile() });
+    },
+  };
+}
 
 /**
  * Where this copy of the app is served from, ending with `/`.
@@ -102,6 +95,7 @@ export default defineConfig({
   plugins: [
     react(),
     oauthClientDocument(PUBLIC_URL),
+    securityPolicy(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],

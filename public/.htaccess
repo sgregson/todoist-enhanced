@@ -14,7 +14,8 @@
 # The service worker must never be served from cache, or a new build sits
 # behind the old one until the browser decides otherwise; nor must the theme
 # boot script, which has no hash in its name. Everything under assets/
-# carries a content hash in its name and can be kept forever.
+# carries a content hash in its name and can be kept forever. The same list
+# is NO_CACHE_FILES in security-headers.ts.
 <IfModule mod_headers.c>
   <FilesMatch "^(sw\.js|registerSW\.js|theme-boot\.js|manifest\.webmanifest)$">
     Header set Cache-Control "no-cache, must-revalidate"
@@ -23,22 +24,14 @@
 
 # What the page may load and where it may talk to.
 #
-# The Todoist token sits in this origin's storage, and the app renders
-# descriptions and comments other people wrote. The Markdown renderer escapes
-# all of it, but if anything ever slipped through, this is what stops it from
-# running a script or sending the token anywhere but Todoist.
+# The policy and what each directive is for live in security-headers.ts at
+# the root of the repository; this is Apache's copy of it, as response
+# headers. The build also writes the policy into index.html as a <meta> tag,
+# for hosts that cannot send headers — but only a header can carry
+# frame-ancestors, which is why this copy still matters here.
 #
-#   script-src   Only this site's own files. No inline script anywhere:
-#                the theme boot script is a file (theme-boot.js) for that.
-#   style-src    The stylesheet, plus inline styles: React sets project
-#                colours, the custom accent and the swipe offset inline.
-#   connect-src  This site and the Todoist API — nothing else can be fetched.
-#   img-src      Avatars and workspace logos come from Todoist's CDNs and
-#                the author's from GitHub, on hosts that are not fixed, so any
-#                HTTPS image is allowed. An image cannot run anything.
-#
-# Keep in step with `preview.headers` in vite.config.ts, which applies the
-# same policy to `npm run preview` so it can be checked before uploading.
+# Change security-headers.ts first, then this line and vercel.json:
+# src/securityHeaders.test.ts fails while they disagree.
 <IfModule mod_headers.c>
   Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.todoist.com; img-src 'self' data: blob: https:; font-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; frame-src https://tally.so; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
   Header always set X-Content-Type-Options "nosniff"
