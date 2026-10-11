@@ -11,6 +11,7 @@ import { avatarUrl } from '@/domain/colors';
 import { formatRelativeDay } from '@/domain/dates';
 import { renderMarkdown } from '@/domain/markdown';
 import type { Note, NoteAttachment } from '@/domain/types';
+import { attachmentHref, attachmentPreview } from '@/domain/urls';
 
 /* The full palette and its data load the first time somebody reacts (#27). */
 const EmojiPalette = lazy(() => import('./EmojiPalette').then((module) => ({ default: module.EmojiPalette })));
@@ -38,26 +39,36 @@ const sizeLabel = (bytes?: number): string => {
  * other file as a chip. An image that does not load (a demo's blob URL after
  * a reload, a link Todoist no longer serves) falls back to the chip, never to
  * a broken picture and a raw link (#33).
+ *
+ * The description comes from whoever posted the comment, so its addresses are
+ * checked first (see domain/urls.ts): a link only for a web address, and a
+ * thumbnail only for a picture Todoist serves. Anything else is a chip, and a
+ * chip with an address no link may carry is plain text.
  */
 function Attachment({ file }: { file: NoteAttachment }) {
   const [broken, setBroken] = useState(false);
   if (!file.file_url) return null;
+  const href = attachmentHref(file.file_url);
   const image = IMAGE.test(file.file_type ?? '') || file.resource_type === 'image';
+  const preview = image ? attachmentPreview(file.image) ?? attachmentPreview(file.file_url) : null;
   const name = file.file_name ?? file.file_url.split('/').pop() ?? file.file_url;
-  if (image && !broken) {
+  if (href && preview && !broken) {
     return (
-      <a className="comment-image" href={file.file_url} target="_blank" rel="noopener noreferrer" title={name}>
-        <img src={file.image ?? file.file_url} alt={name} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
+      <a className="comment-image" href={href} target="_blank" rel="noopener noreferrer" title={name}>
+        <img src={preview} alt={name} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
       </a>
     );
   }
-  return (
-    <a className="comment-file" href={file.file_url} target="_blank" rel="noopener noreferrer" title={name}>
+  const chip = (
+    <>
       <Icon name={image ? 'image' : 'file'} size="sm" />
       <span>{name}</span>
       {file.file_size ? <small>{sizeLabel(file.file_size)}</small> : null}
-    </a>
+    </>
   );
+  return href
+    ? <a className="comment-file" href={href} target="_blank" rel="noopener noreferrer" title={name}>{chip}</a>
+    : <span className="comment-file" title={name}>{chip}</span>;
 }
 
 function Avatar({ picture, name }: { picture: string | null; name: string | undefined }) {
