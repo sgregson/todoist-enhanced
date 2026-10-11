@@ -298,6 +298,12 @@ since Todoist fetches it. A copy built for another address says so on its
 sign-in screen instead of sending you to Todoist's "Invalid redirect URI".
 Signing in with an API token works anywhere, with none of this.
 
+Every build carries its Content-Security-Policy in the page itself, so it
+holds on any host, including GitHub Pages, which cannot send headers. Apache,
+Vercel, Netlify and Cloudflare Pages also get it as headers. Which file does
+what on each host, and the GitHub Pages workflow, are in
+[docs/deploying.md](docs/deploying.md#the-security-policy-on-each-host).
+
 I built this for myself, so it is shaped around one person's habits — that is
 the main thing it needs help with. If you have an idea, open an issue and say
 how you plan your week. The most useful thing you can tell me is what you do
